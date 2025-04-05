@@ -38,8 +38,6 @@ def handle_response(txt: str) -> str:
         return 'Hi there!'
     if 'mistrz' in lowered_txt:
         return 'Aurel jest mistrzem!'
-    if 'a grucha?' in lowered_txt:
-        return 'nie znam typa, pewnie ciota...'
     return 'I do not understand what do you want...'
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
