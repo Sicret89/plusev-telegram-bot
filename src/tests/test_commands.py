@@ -1,4 +1,4 @@
-from main import user_data, get_user_data
+from src.main import user_data, get_user_data
 
 def setup_function():
     user_data.clear()  # clear shared state before each test

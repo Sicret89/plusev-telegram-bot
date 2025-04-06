@@ -1,7 +1,10 @@
 import logging
+import os
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters, Application
-import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 # Setup logging
 logging.basicConfig(
@@ -9,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     handlers=[
         logging.StreamHandler(),  # Console
-        logging.FileHandler("bot.log")  # File
+        logging.FileHandler("../bot.log")  # File
     ]
 )
 logger = logging.getLogger(__name__)
@@ -19,9 +22,9 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 if not TOKEN:
     raise ValueError("TELEGRAM_TOKEN not found in environment!")
 
-BOT_USERNAME = os.getenv("BOT_USERNAME")
+BOT_USERNAME = os.getenv("BOT_USERNAME")  # You can use this if needed for group parsing
 
-# In-memory user data store
+# In-memory user data store (should be replaced with a database for scalability)
 user_data = {}
 
 def get_user_data(user_id):
@@ -106,27 +109,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(response)
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f'Update {update} caused error {context.error}')
-
+    logger.error(f'Update {update} caused error {context.error}')
 
 if __name__ == '__main__':
     logger.info("Starting bot...")
     app = Application.builder().token(TOKEN).build()
 
-    # Cmmands
+    # Add command handlers
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(CommandHandler('info', info_command))
     app.add_handler(CommandHandler('balance', balance_command))
     app.add_handler(CommandHandler('debt', debt_command))
     app.add_handler(CommandHandler('maxdebt', maxdebt_command))
 
-    # Messages
+    # Add message handler for user responses
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
 
     # Errors
-    logger.error("Some error message")
     app.add_error_handler(error)
 
-    # Polls
+    # Polling
     logger.info("Polling...")
-    app.run_polling(poll_interval=0.1)
+    app.run_polling(poll_interval=1)

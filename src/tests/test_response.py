@@ -1,4 +1,4 @@
-from main import handle_response
+from src.main import handle_response
 
 def test_handle_response_hello():
     assert handle_response("hello") == "Hi there!"
