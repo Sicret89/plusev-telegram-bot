@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters, Application
+from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters, Application
 import os
 
 # Setup logging
@@ -21,15 +21,62 @@ if not TOKEN:
 
 BOT_USERNAME = os.getenv("BOT_USERNAME")
 
+# In-memory user data store
+user_data = {}
+
+def get_user_data(user_id):
+    if user_id not in user_data:
+        user_data[user_id] = {
+            'balance': 0.0,
+            'debt': 0.0,
+            'max_debt': 100.0  # arbitrary default
+        }
+    return user_data[user_id]
+
 # Commands
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello! Thanks for reaching me! I ma a PlusEV bot')
-
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('I ma a PlusEV bot! Please type something so I can respond')
+    help_text = (
+        "🛠 *Available Commands:*\n\n"
+        "/help – Show this help message\n"
+        "/info – Show your balance, current debt, and max debt\n"
+        "/balance – Show only your balance\n"
+        "/debt – Show only your debt\n"
+        "/maxdebt – Show only your max possible debt\n"
+    )
+    await update.message.reply_text(help_text, parse_mode='Markdown')
 
-async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('This is a custom command!')
+async def info_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+    data = get_user_data(user_id)
+
+    message = (
+        f"💰 Balance: {data['balance']:.2f} zł\n"
+        f"📉 Current Debt: {data['debt']:.2f} zł\n"
+        f"🚨 Max Possible Debt: {data['max_debt']:.2f} zł"
+    )
+
+    await update.message.reply_text(message)
+
+async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    data = get_user_data(user_id)
+    await update.message.reply_text(
+        f"💰 Balance: {data['balance']:.2f} PLN"
+    )
+
+async def debt_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    data = get_user_data(user_id)
+    await update.message.reply_text(
+        f"💸 Current Debt: {data['debt']:.2f} PLN"
+    )
+
+async def maxdebt_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    data = get_user_data(user_id)
+    await update.message.reply_text(
+        f"📉 Max Possible Debt: {data['max_debt']:.2f} PLN"
+    )
 
 # Responses
 def handle_response(txt: str) -> str:
@@ -67,9 +114,11 @@ if __name__ == '__main__':
     app = Application.builder().token(TOKEN).build()
 
     # Cmmands
-    app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('custom', custom_command))
+    app.add_handler(CommandHandler('info', info_command))
+    app.add_handler(CommandHandler('balance', balance_command))
+    app.add_handler(CommandHandler('debt', debt_command))
+    app.add_handler(CommandHandler('maxdebt', maxdebt_command))
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
